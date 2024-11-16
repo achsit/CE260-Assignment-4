@@ -1,0 +1,21 @@
+import pandas as pd
+
+# Load the CSV data
+df = pd.read_csv('AirportQtrHrData_JFK.csv')
+
+# Step 1: Filter rows where meteorological condition (MC) is 'I' (IFR conditions), or ‘V’ for VFR conditions.
+ifr_data = df[df['MC'] == 'I'] 
+
+# Step 2: Extract the arrival runway configuration from the 'RUNWAY' column
+# Assuming the format is "departure_runways | arrival_runways"
+# We split the 'RUNWAY' column by '|' and take the second part (arrival runways)
+ifr_data['Arrival_Runway_Config'] = ifr_data['RUNWAY'].str.split('|').str[1].str.strip()
+
+# Step 3: Filter rows where there are arrivals (ARR_CT > 0)
+ifr_arrival_data = ifr_data[ifr_data['ARR_CT'] > 0]
+
+# Step 4: Count the frequency of each arrival runway configuration
+runway_counts = ifr_arrival_data['Arrival_Runway_Config'].value_counts()
+
+# Step 5: Display the most common arrival runway configurations
+print(runway_counts.head())  # Show the top 5 most common configurations
