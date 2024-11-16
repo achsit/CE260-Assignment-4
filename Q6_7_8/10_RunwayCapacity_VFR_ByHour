@@ -1,0 +1,69 @@
+import pandas as pd
+
+# Load the CSV file containing aircraft types, landing times, and weight classifications
+df = pd.read_csv('updated_with_weight_class.csv')
+
+# Define the separation matrix based on FAA weight classifications
+separation_matrix = {
+    ('L', 'L'): 2.5, ('L', 'M'): 2.5, ('L', 'B'): 2.5, ('L', 'H'): 2.5, ('L', 'S'): 2.5,
+    ('M', 'L'): 4.0, ('M', 'M'): 2.5, ('M', 'B'): 2.5, ('M', 'H'): 2.5, ('M', 'S'): 2.5,
+    ('B', 'L'): 5.0, ('B', 'M'): 4.0, ('B', 'B'): 4.0, ('B', 'H'): 4.0, ('B', 'S'): 2.5,
+    ('H', 'L'): 6.0, ('H', 'M'): 5.0, ('H', 'B'): 5.0, ('H', 'H'): 4.0, ('H', 'S'): 2.5,
+    ('S', 'L'): 8.0, ('S', 'M'): 7.0, ('S', 'B'): 7.0, ('S', 'H'): 6.0, ('S', 'S'): 2.5
+}
+
+# Define a function to convert separation distance (nm) to time (seconds)
+def separation_time_in_seconds(separation_nm):
+    return separation_nm * 30  # Since at 120 knots: 1 nm = 30 seconds
+
+# Define the time sessions
+sessions = [
+    ('0:00', '5:59'),
+    ('6:00', '9:59'),
+    ('10:00', '14:00'),
+    ('14:00', '17:59'),
+    ('18:00', '23:59')
+]
+
+# Dictionary to hold capacity estimates for each session
+capacity_estimates = {}
+
+for start, end in sessions:
+    # Filter records for the current session
+    df_session = df[
+        (df['T_WHLS_ON'] >= start) & 
+        (df['T_WHLS_ON'] <= end)
+    ]
+    
+    # Sort the session dataframe by landing time to ensure correct order
+    df_session = df_session.sort_values('T_WHLS_ON')
+    
+    # Initialize a list to store separation times between consecutive aircraft
+    separation_times = []
+    
+    # Iterate over rows to calculate required separation times between consecutive landings
+    for i in range(1, len(df_session)):
+        # Get weight classifications of consecutive aircraft
+        prev_class = df_session.iloc[i-1]['FAA_Weight_Class']
+        curr_class = df_session.iloc[i]['FAA_Weight_Class']
+        
+        # Get the required separation distance from the matrix
+        separation_nm = separation_matrix.get((prev_class, curr_class), None)
+        
+        if separation_nm is not None:
+            # Convert separation distance to time in seconds
+            sep_time_seconds = separation_time_in_seconds(separation_nm)
+            separation_times.append(sep_time_seconds)
+
+    # Calculate runway capacity
+    if separation_times:
+        total_separation_time_seconds = sum(separation_times)
+        runway_capacity_per_hour = len(separation_times) / (total_separation_time_seconds / 3600)
+        capacity_estimates[f'{start}-{end}'] = round(runway_capacity_per_hour, 2)
+    else:
+        capacity_estimates[f'{start}-{end}'] = 0
+
+# Print the capacity estimates
+print("Runway Capacity Estimates (landings per hour):")
+for session, capacity in capacity_estimates.items():
+    print(f"{session}: {capacity}")

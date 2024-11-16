@@ -1,0 +1,40 @@
+import matplotlib.pyplot as plt
+
+# Define the time periods and their corresponding hourly capacities
+time_periods = [
+    {'start': 0, 'end': 6, 'capacity': 36.97},  # 0:00-5:59
+    {'start': 6, 'end': 10, 'capacity': 40.93}, # 6:00-9:59
+    {'start': 10, 'end': 14, 'capacity': 36.34}, # 10:00-13:59
+    {'start': 14, 'end': 18, 'capacity': 36.10}, # 14:00-17:59
+    {'start': 18, 'end': 24, 'capacity': 37.12}  # 18:00-23:59
+]
+
+# Calculate cumulative capacity for each hour
+cumulative_capacity = []
+current_cumulative = 0
+
+for period in time_periods:
+    for hour in range(period['start'], period['end']):
+        current_cumulative += period['capacity']
+        cumulative_capacity.append({
+            'hour': hour,
+            'cumulative': current_cumulative
+        })
+
+# Extract hours and cumulative values for plotting
+hours = [entry['hour'] for entry in cumulative_capacity]
+cumulative = [entry['cumulative'] for entry in cumulative_capacity]
+
+# Plotting the cumulative capacity over time
+plt.figure(figsize=(12, 6))
+plt.plot(hours, cumulative, marker='o', color='blue', markersize=5)
+plt.title('Cumulative Runway Capacity', fontsize=14)
+plt.xlabel('Hour of the Day', fontsize=12)
+plt.ylabel('Cumulative Capacity (aircraft)', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.xticks(range(0, 24, 1))
+
+
+
+plt.tight_layout()
+plt.show()

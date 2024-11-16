@@ -1,0 +1,48 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import datetime
+
+# Read the CSV file
+df = pd.read_csv('updated_with_weight_class.csv')
+
+# Convert T_WHLS_ON to datetime
+def convert_time(time_str):
+    # Handle potential empty strings
+    if pd.isna(time_str) or time_str.strip() == '':
+        return None
+    
+    # Split hours and minutes
+    hours, minutes = map(int, time_str.split(':'))
+    
+    # Create a datetime object (using a base date)
+    return datetime(2000, 1, 1, hours, minutes)
+
+# Convert T_WHLS_ON to datetime and sort by arrival time
+df['arrival_time'] = df['T_WHLS_ON'].apply(convert_time)
+df_sorted = df.sort_values('arrival_time')
+
+# Create cumulative count of arrivals
+df_sorted['cumulative_arrivals'] = range(1, len(df_sorted) + 1)
+
+# Create the plot
+plt.figure(figsize=(15, 6))
+plt.plot(df_sorted['arrival_time'], df_sorted['cumulative_arrivals'], marker='o', markersize=3)
+
+# Formatting the plot
+plt.title('Cumulative Aircraft Arrivals Over Time', fontsize=15)
+plt.xlabel('Time (HH:MM)', fontsize=12)
+plt.ylabel('Cumulative Number of Arrivals', fontsize=12)
+
+# Format x-axis to show HH:MM
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+plt.gcf().autofmt_xdate()  # Rotate and align the tick labels
+
+# Add grid for better readability
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Tight layout to prevent cutting off labels
+plt.tight_layout()
+
+# Show the plot
+plt.show()

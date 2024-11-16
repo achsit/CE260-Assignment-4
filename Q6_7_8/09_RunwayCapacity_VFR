@@ -1,0 +1,42 @@
+import pandas as pd
+
+# Load the CSV file containing aircraft types, landing times, and weight classifications
+df = pd.read_csv('updated_with_weight_class.csv')
+
+# Define the updated separation matrix based on FAA weight classifications
+separation_matrix = {
+    ('L', 'L'): 2.5, ('L', 'M'): 2.5, ('L', 'B'): 2.5, ('L', 'H'): 2.5, ('L', 'S'): 2.5,
+    ('M', 'L'): 4.0, ('M', 'M'): 2.5, ('M', 'B'): 2.5, ('M', 'H'): 2.5, ('M', 'S'): 2.5,
+    ('B', 'L'): 5.0, ('B', 'M'): 4.0, ('B', 'B'): 4.0, ('B', 'H'): 4.0, ('B', 'S'): 2.5,
+    ('H', 'L'): 6.0, ('H', 'M'): 5.0, ('H', 'B'): 5.0, ('H', 'H'): 4.0, ('H', 'S'): 2.5,
+    ('S', 'L'): 8.0, ('S', 'M'): 7.0, ('S', 'B'): 7.0, ('S', 'H'): 6.0, ('S', 'S'): 2.5
+}
+
+# Define a function to convert separation distance (nm) to time (seconds)
+def separation_time_in_seconds(separation_nm):
+    return separation_nm * 30 # Since at 120 knots: 1 nm = 30 seconds
+
+# Initialize a list to store separation times between consecutive aircraft
+separation_times = []
+
+# Iterate over rows to calculate required separation times between consecutive landings
+for i in range(1, len(df)):
+    # Get weight classifications of consecutive aircraft
+    prev_class = df.iloc[i-1]['FAA_Weight_Class']
+    curr_class = df.iloc[i]['FAA_Weight_Class']
+    
+    # Get the required separation distance from the matrix
+    separation_nm = separation_matrix.get((prev_class, curr_class), None)
+    
+    if separation_nm:
+        # Convert separation distance to time in seconds
+        sep_time_seconds = separation_time_in_seconds(separation_nm)
+        separation_times.append(sep_time_seconds)
+
+# Sum all calculated separation times
+total_separation_time_seconds = sum(separation_times)
+
+# Calculate runway capacity (number of landings per hour)
+runway_capacity_per_hour = len(separation_times) / (total_separation_time_seconds / 3600)
+
+print(f"Estimated runway capacity: {runway_capacity_per_hour:.2f} landings per hour")
